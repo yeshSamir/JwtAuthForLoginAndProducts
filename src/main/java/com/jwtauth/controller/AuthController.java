@@ -4,6 +4,7 @@ import com.jwtauth.api.AuthRequests;
 import com.jwtauth.api.AuthResponse;
 import com.jwtauth.entity.Users;
 import com.jwtauth.util.JwtTokenUtils;
+import lombok.extern.log4j.Log4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
+import java.util.logging.Logger;
 
 @RestController
 public class AuthController {
@@ -27,23 +29,22 @@ public class AuthController {
     JwtTokenUtils jwtTokenUtils;
 
     @PostMapping("/auth/login")
-    public ResponseEntity<?> login(
-            @RequestBody @Valid AuthRequests authRequests
-    ) {
+    public ResponseEntity<?> login(@RequestBody @Valid AuthRequests request) {
         try {
             Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(authRequests.getEmail(), authRequests.getPassword())
+                    new UsernamePasswordAuthenticationToken(
+                            request.getEmail(), request.getPassword())
             );
+
             Users user = (Users) authentication.getPrincipal();
-            String accessToken=jwtTokenUtils.generateAccessToken(user);
-            AuthResponse authResponse = new AuthResponse(user.getEmail(), accessToken);
-            return ResponseEntity.ok(authResponse);
+            String accessToken = jwtTokenUtils.generateAccessToken(user);
+            AuthResponse response = new AuthResponse(user.getEmail(), accessToken);
 
-        } catch (BadCredentialsException badCredentialsException) {
+            return ResponseEntity.ok().body(response);
+
+        } catch (Exception ex) {
+            System.out.println(ex.getMessage());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-
         }
-
     }
-
 }
